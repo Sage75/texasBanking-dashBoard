@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Texas CreditBenchmark</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet"></link>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f8f9fe;
+      color: #344767;
+    }
+    .wrapper { display: flex; height: 100%; width: 100%; margin-top:-20px; }
+    .sidebar {
+      width: 280px;
+      background: white;
+      height: 900PX;
+      padding: 40px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar img { max-width: 180px; margin-bottom: 20px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 20px;
+      margin-bottom: 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      color: #344767;
+      transition: 0.3s;
+    }
+    .nav-item svg { margin-right: 10px; }
+    .nav-item:hover, .nav-item.active { background: #e9efff; color: #2d6cdf; }
+    .upgrade-btn {
+      background: #962812;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: auto;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .main { flex: 1; overflow-y: auto; padding: 30px; }
+    .breadcrumbs { font-size: 14px; color: #7b809a; margin-bottom: 25px; }
+    .breadcrumbs strong { color: #344767; }
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
+    .card-row { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px; }
+    .card {
+      flex: 1;
+      min-width: 220px;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      position: relative;
+    }
+    .card h3 { font-size: 14px; color: #7b809a; margin-bottom: 10px; }
+    .card .value { font-size: 24px; font-weight: bold; }
+    .card .change { font-size: 14px; color: #2dce89; }
+    .card .icon-box { position: absolute; top: 20px; right: 20px; background: #e9efff; padding: 10px; border-radius: 50%; }
+    .charts-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; }
+    .chart-card {
+      flex: 1;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .progress-bar { background: #e0e0e0; border-radius: 10px; height: 6px; overflow: hidden; width: 100px; }
+    .progress { height: 100%; background: #2dce89; }
+    table td img { vertical-align: middle; margin-right: 6px; }
+     .card-flip-container {
+      perspective: 1000px;
+      width: 450px;
+      height: 280px;
+      position: relative;
+    }
+
+    .card-flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.8s;
+      transform-style: preserve-3d;
+    }
+
+    #cardFlipContainer.flipped .card-flip-inner {
+  transform: rotateY(180deg);
+}
+
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 450px;
+      height: 280px;
+      border-radius: 25px;
+      backface-visibility: hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+      overflow: hidden;
+      user-select: none;
+      color: white;
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .card-front {
+      background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+      padding: 25px 30px;
+      box-sizing: border-box;
+    }
+
+    /* Subtle glossy reflection */
+    .card-front::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%);
+      pointer-events: none;
+      border-radius: 25px;
+      z-index: 1;
+    }
+
+    /* Texas Credit Benchmark logo */
+    .top-left-logo {
+      position: absolute;
+      top: 5px;
+      left: 20px;
+      z-index: 2;
+    }
+
+    .logo {
+      height: 100px;
+      width: 200px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      fill: #d00000;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 1.6rem;
+      color: white;
+      user-select: none;
+    }
+
+    .logo-subtext {
+      font-weight: 400;
+      font-size: 1rem;
+      color: white;
+      user-select: none;
+      margin-left: 5px;
+      position: relative;
+    }
+
+    .logo-subtext .checkmark {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) rotate(-20deg);
+      width: 14px;
+      height: 14px;
+      fill: #d00000;
+    }
+
+    /* Master debit text */
+    .master-debit {
+      position: absolute;
+      top: 25px;
+      right: 30px;
+      text-align: center;
+      z-index: 2;
+      color: #bbb;
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .master-debit .master {
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: 0.3em;
+      color: #ccc;
+      user-select: none;
+    }
+
+    .master-debit .debit {
+      font-weight: 400;
+      font-size: 1rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      user-select: none;
+      margin-top: 2px;
+    }
+
+    /* Chip and contactless */
+    .chip-contactless {
+      position: relative;
+      margin-top: 80px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      z-index: 2;
+    }
+
+    .chip {
+      width: 60px;
+      height: auto;
+      filter: drop-shadow(0 0 1px rgba(0,0,0,0.5));
+    }
+
+    .contactless {
+      width: 30px;
+      height: auto;
+      filter: drop-shadow(0 0 1px rgb(255, 255, 255));
+    }
+
+    /* Card number */
+    .card-number {
+      margin-top: 30px;
+      font-size: 1.6rem;
+      letter-spacing: 0.2em;
+      font-weight: 400;
+      font-family: 'Roboto Mono', monospace;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      max-width: 100%;
+      color: #ddd;
+      z-index: 2;
+    }
+
+    /* Cardholder and validity */
+    .card-info {
+      margin-top: 40px;
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Roboto Mono', monospace;
+      color: #bbb;
+      font-size: 0.9rem;
+      user-select: none;
+      z-index: 1;
+    }
+
+    .cardholder-name {
+      text-transform: uppercase;
+      font-weight: 200;
+      letter-spacing: 0.0em;
+    }
+
+    .valid-thru {
+      position: absolute;
+      bottom: 5px;
+      right: 200px;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.8;
+      z-index: 2;
+      justify-content: center;
+    }
+
+    .valid-date {
+      position: absolute;
+      bottom: 10px;
+      right: 130px;
+      font-size: 1.1rem;
+      letter-spacing: 0.15em;  
+      z-index: 2;
+    }
+
+    .mastercard-logo {
+      position: absolute;
+      top: 150px;
+      left: 175px;
+      width: 400px;
+      height: 200px;
+      z-index: 2;
+      margin-top: -10px;
+    }
+
+    .circle {
+      position: absolute;
+      top: 120px;
+      left: 300px;
+      width: 400px;
+      height: 200px;
+      z-index: 2;
+    }
+
+    .circle2 {
+      position: absolute;
+      top: 150px;
+      left: 225px;
+      width: 400px;
+      height: 200px;
+      z-index: 2;
+    }
+
+    .circle3 {
+      position: absolute;
+      top: 70px;
+      left: 100px;
+      width: 400px;
+      height: 200px;
+      z-index: 2;
+    }
+
+    /* Card back styles */
+    .card-back {
+      background: #121212;
+      padding: 0;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      border-radius: 25px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+      overflow: hidden;
+      user-select: none;
+      color: white;
+      width: 450px;
+      height: 280px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      backface-visibility: hidden;
+      transform: rotateY(180deg);
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .top-strip {
+      background-color: #1a1a1a;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 30px;
+      font-size: 1rem;
+      letter-spacing: 0.15em;
+      font-weight: 400;
+      border-bottom: 1px solid #333;
+    }
+
+    .magnetic-strip {
+      background: #c4c4c4;
+      height: 60px;
+      margin: 10px 0;
+      width: 100%;
+    }
+
+    .signature-cvc-container {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 30px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    .signature-box {
+      background-color: white;
+      width: 70%;
+      height: 40px;
+      position: relative;
+      border-radius: 4px;
+      box-shadow: inset 0 0 5px #999999;
+    }
+
+    .signature-box::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 40%;
+      height: 100%;
+      background: repeating-radial-gradient(circle at 10px 10px, #bfbfbf 0, #bfbfbf 2px, transparent 2px, transparent 4px);
+      opacity: 0.5;
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+    }
+
+    .cvc-box {
+      width: 25%;
+      text-align: center;
+      font-size: 1.5rem;
+      letter-spacing: 0.2em;
+      font-weight: 700;
+      user-select: none;
+      color: white;
+      text-shadow: 0 0 3px #000000;
+    }
+
+    .cvc-number {
+      margin-bottom: 5px;
+    }
+
+    .text-container {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 30px 20px 30px;
+      gap: 20px;
+      font-size: 0.40rem;
+      line-height: 1.4;
+      color: #ddd;
+      margin-top: -5px;
+    }
+
+    .text-column {
+      width: 50%;
+      text-align: left;
+      letter-spacing: 0.07em;
+    }
+
+    /* Flip button styles */
+    .flip-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-family: 'Roboto Mono', monospace;
+      cursor: pointer;
+      border-radius: 8px;
+      border: none;
+      background-color: #d00000;
+      color: white;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+
+    .flip-button:hover {
+      background-color: #a00000;
+    }
+    
+    /* Base styling for support tab */
+#support {
+  padding: 30px;
+}
+
+#support .breadcrumbs {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+/* Flex layout for the content */
+#support .support-wrapper {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* LEFT side styles */
+#support .support-left {
+  flex: 2;
+  min-width: 300px;
+}
+
+#support .support-left h3 {
+  margin-top: 30px;
+  color: #333;
+}
+
+#support .support-left ul {
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+#support form input,
+#support form textarea {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+#support form button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#support form button:hover {
+  background-color: #0056b3;
+}
+
+/* RIGHT side styles */
+#support .support-right {
+  flex: 1;
+  min-width: 250px;
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+#support .support-right h3 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+#support .support-right p,
+#support .support-right a {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+#support .support-right a {
+  text-decoration: none;
+}
+
+#support .support-right a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive for mobile */
+@media screen and (max-width: 768px) {
+  #support .support-wrapper {
+    flex-direction: column;
+  }
+
+  #support .support-left,
+  #support .support-right {
+    width: 100%;
+  }
+}
+.welcome-container {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    overflow: hidden;
+    white-space: nowrap;
+    height: 25px;
+  }
+
+  .welcome-slider {
+    display: inline-block;
+    white-space: nowrap;
+    animation: scrollText 10s linear infinite;
+    font-size: 16px;
+    color: #333;
+    font-weight: 500;
+  }
+
+  @keyframes scrollText {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+  .blur {
+    filter: blur(6px);
+    transition: filter 0.3s ease;
+  }
+  </style>
+</head>
+<!-- HEADER SECTION -->
+<header style="position: sticky; top: 0; z-index: 1000; background-color: #ffffff; padding: 15px 30px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+  <div style="position: relative; display: flex; align-items: center; justify-content: space-between;">
+
+    <!-- Logo -->
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="https://texascreditbenchmark.com/wp-content/uploads/2025/07/logo-6-e1751434403324.png" alt="Logo" style="height: 50px;">
+    </div>
+
+    <!-- Sliding Welcome Text (Centered) -->
+    <div class="welcome-container">
+      <div class="welcome-slider">Welcome to TexasCreditBenchmark • Welcome to TexasCreditBenchmark • Welcome to TexasCreditBenchmark</div>
+    </div>
+
+    <!-- Profile Dropdown -->
+    <div style="position: relative;">
+      <div onclick="toggleUserDropdown()" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+        <img src="https://ui-avatars.com/api/?name=Credit+Benchmark" alt="User" style="width: 35px; height: 35px; border-radius: 50%;">
+        <span style="font-weight: 500;">Profile</span>
+        <i data-lucide="chevron-down" style="width: 18px;"></i>
+      </div>
+
+      <!-- Dropdown -->
+      <div id="userDropdown" style="display: none; position: absolute; right: 0; top: 45px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 180px; border-radius: 8px; z-index: 999;">
+        <ul style="list-style: none; padding: 10px 0; margin: 0;">
+          <li class="nav-item" data-tab="profile">
+            <i data-lucide="user" style="margin-right: 10px;"></i>
+            <span>Profile</span>
+          </li>
+         <li style="padding: 10px 20px; cursor:pointer;" id="logoutBtn">
+  🔓 Logout
+</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</header>
+
+<body>
+ <body>
+  <div class="wrapper">
+    <div class="sidebar">
+    
+      <div class="nav-item active" data-tab="dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</div>
+      <!--<div class="nav-item" data-tab="profile"><i data-lucide="user"></i> Profile</div>-->
+      <div class="nav-item" data-tab="bankStatement"><i data-lucide="list"></i> Bank Statement</div>
+      <div class="nav-item" data-tab="recipient"><i data-lucide="repeat"></i> Transfer</div>
+      <div class="nav-item" data-tab="card"><i data-lucide="credit-card"></i> Card</div>
+      
+      <div class="nav-item" data-tab="support"><i data-lucide="user-plus"></i> Support</div>
+     
+   
+    </div>
+
+    <div class="main">
+        
+<!-- Dashboard -->
+<div id="dashboard" class="tab-section active">
+  <div class="breadcrumbs" style="font-size: 14px; color: #666; margin-bottom: 15px; font-family: 'Segoe UI', sans-serif;">
+    Pages / <strong style="color: #333;">Dashboard</strong>
+  </div>
+
+  <!-- Balance Card -->
+  <div class="card-row" style="display: flex; gap: 20px; flex-wrap: wrap;">
+    <div class="card" style="flex: 1; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+      <h3 style="margin-bottom: 10px;">Total Balance</h3>
+      <div class="value" id="live-balance" style="font-size: 24px; color: green; font-weight: bold;">
+        $0.00 <span class="change" id="balanceChange" style="color: gray;">–</span>
+</div>
+      <div class="icon-box" style="margin-top: 10px;"><i data-lucide="dollar-sign"></i></div>
+    </div>
+  </div>
+  
+ 
+  <!-- Row 1: Smart Tips -->
+  <div class="card-row" style="margin-top: 30px; display: flex; gap: 20px; flex-wrap: wrap;">
+  <div class="card" style="flex: 1; background: #fff7e6; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); font-family: 'Segoe UI', sans-serif;">
+    <div style="font-size: 18px; font-weight: 600; color: #aa6708; margin-bottom: 12px;">🇺🇸 Smart Banking Practices (USA)</div>
+    <ul style="padding-left: 20px; color: #555; font-size: 15px;">
+      <li>Set up auto-pay to avoid late fees.</li>
+      <!--<li>Check credit score regularly.</li>-->
+      <li>Enable 2FA (Two-Factor Authentication) for all online banking.</li>
+      <li>Set alerts for large transactions or account changes.</li>
+    </ul>
+  </div>
+</div>
+
+
+  <!-- Row 2: Offers & Reminders -->
+  <div class="card-row" style="margin-top: 30px; display: flex; gap: 20px; flex-wrap: wrap;">
+    <!-- Offers -->
+    <div style="flex: 1; min-width: 280px; background: #e6f7ff; padding: 20px; border-radius: 12px; border: 1px solid #bce3f9; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+      <h3 style="color: #0272a3; margin-bottom: 12px;">🔔 Account Insights</h3>
+      <ul style="padding-left: 20px; font-size: 14px; color: #444;">
+        <li>🏦 Access to savings, credit, and loan account details.</li>
+    <li>✅ Seamless fund transfers between linked accounts.</li>
+    <!--<li>📊 Auto-generated financial summaries every month.</li>-->
+    <li>🔐 Enhanced security features added to your account dashboard.</li>
+    
+    <li>💬 24/7 Support now integrated for all users.</li>
+      </ul>
+    </div>
+
+    <!-- Reminders -->
+    <!--<div style="flex: 1; min-width: 280px; background: #fff0f2; padding: 20px; border-radius: 12px; border: 1px solid #f2cdd3; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">-->
+    <!--  <h3 style="color: #a53050; margin-bottom: 12px;">⏰ Important Reminders</h3>-->
+    <!--  <ul style="padding-left: 20px; font-size: 14px; color: #444;">-->
+    <!--    <li>📅 Credit card bill due: <strong>July 20</strong></li>-->
+    <!--    <li>📄 Update KYC documents before <strong>Aug 5</strong></li>-->
+    <!--    <li>🔔 Setup investment goal review</li>-->
+    <!--  </ul>-->
+    <!--</div>-->
+  </div>
+
+  <!-- Row 3: Bank Info -->
+  <div class="card-row" style="margin-top: 30px; display: flex; gap: 20px; flex-wrap: wrap;">
+    <div style="flex: 1; background: #f9f9ff; padding: 20px; border-radius: 12px; border: 1px solid #dcdcf6; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+      <h3 style="color: #4b4f8c; margin-bottom: 12px;">🏦 Texas Credit Benchmark</h3>
+      <!-- <p style="margin: 10px 0; font-size: 14px;"><strong>Founded:</strong> 2004</p> -->
+      <p style="margin: 10px 0; font-size: 14px;"><strong>Customer Care:</strong> +1 (267) 986 8319</p>
+      <p style="margin: 10px 0; font-size: 14px;"><strong>Support Email:</strong> support@texascreditbenchmark.com</p>
+    </div>
+  </div>
+  
+<!--  <div style="margin-top: 40px;">-->
+<!--  <h3>Payment Method Summary</h3>-->
+<!--  <canvas id="paymentChart" width="400" height="200"></canvas>-->
+<!--</div>-->
+
+</div>
+    
+
+<!-- Profile -->
+<!--<div id="profile" class="tab-section">-->
+<!--  <div class="breadcrumbs"><strong>Profile</strong></div>-->
+  
+<!--  <div id="profileContainer" style="max-width: 500px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.05); font-family: 'Segoe UI', sans-serif;">-->
+<!--    <h3>Profile Details</h3>-->
+<!--    <p><strong>Full Name:</strong> <span id="profileFullName">Loading...</span></p>-->
+<!--    <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>-->
+<!--    <p><strong>Phone:</strong> <span id="profilePhone">Loading...</span></p>-->
+<!--     <p><strong>IBAN Number:</strong> <span id="ibannumber">Loading...</span></p>-->
+<!--    <p><strong>Country:</strong> <span id="profileCountry">Loading...</span></p>-->
+<!--    <p><strong>State:</strong> <span id="profileState">Loading...</span></p>-->
+<!--    <p><strong>City:</strong> <span id="profileCity">Loading...</span></p>-->
+<!--    <p><strong>ZIP:</strong> <span id="profileZip">Loading...</span></p>-->
+<!--  </div>-->
+<!--</div>-->
+
+<!-- Profile -->
+<div id="profile" class="tab-section">
+  <div class="breadcrumbs" style="font-size: 14px; color: #666; margin-bottom: 15px; font-family: 'Segoe UI', sans-serif;">
+    <strong style="color: #333;">Profile</strong>
+  </div>
+
+  <!-- Flex Layout: Left Info + Right Info -->
+  <div style="display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px;">
+
+    <!-- LEFT SIDE: Profile Info -->
+    <div style="flex: 1; min-width: 280px; background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.04); font-family: 'Segoe UI', sans-serif;">
+      <h3 style="margin-bottom: 15px; color: #333;">👤 Profile Details</h3>
+      <p style="margin: 10px 0;"><strong>Full Name:</strong> <span id="profileFullName">Loading...</span></p>
+      <p style="margin: 10px 0;"><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
+      <p style="margin: 10px 0;"><strong>Phone:</strong> <span id="profilePhone">Loading...</span></p>
+      <p style="margin: 10px 0;"><strong>IBAN:</strong> <span id="ibannumber">Loading...</span></p>
+      <p style="margin: 10px 0;"><strong>Country:</strong> <span id="profileCountry">Loading...</span></p>
+      <p style="margin: 10px 0;"><strong>State:</strong> <span id="profileState">Loading...</span></p>
+      <p style="margin: 10px 0;"><strong>City:</strong> <span id="profileCity">Loading...</span></p>
+      <p style="margin: 10px 0;"><strong>ZIP:</strong> <span id="profileZip">Loading...</span></p>
+    </div>
+
+    <!-- RIGHT SIDE: General Info Panel -->
+    <div style="flex: 1; min-width: 280px; background: #fffef9; padding: 20px 25px; border-radius: 12px; border: 1px solid #f1e9cc; box-shadow: 0 4px 12px rgba(0,0,0,0.04); font-family: 'Segoe UI', sans-serif;">
+      <h3 style="font-size: 18px; color: #7a5600; margin-bottom: 16px; border-bottom: 1px solid #ecdcb2; padding-bottom: 8px;">📘 Information Panel</h3>
+      <p style="margin: 12px 0; font-size: 14px;"><strong>📅 System Uptime:</strong> 99.98% this month</p>
+      <p style="margin: 12px 0; font-size: 14px;"><strong>⚠️ Maintenance Window:</strong> Sunday, 2 AM – 4 AM</p>
+      <p style="margin: 12px 0; font-size: 14px;"><strong>📢 Last Update:</strong> Version 2.3.5 on July 10</p>
+      <p style="margin: 12px 0; font-size: 14px;"><strong>✅ Notifications:</strong> All systems normal</p>
+    </div>
+
+  </div>
+
+  <!-- Bottom Section: Security + Activity -->
+  <div style="margin-top: 40px; display: flex; flex-wrap: wrap; gap: 30px;">
+
+    <!-- Security Tips -->
+    <div style="flex: 1; min-width: 280px; background: #fff7e6; padding: 20px; border-radius: 12px; border: 1px solid #f2ddb2; box-shadow: 0 4px 10px rgba(0,0,0,0.03); font-family: 'Segoe UI', sans-serif;">
+      <h3 style="color: #aa6708; margin-bottom: 12px;">🔐 Security Tips</h3>
+      <ul style="padding-left: 20px; font-size: 14px; color: #555; margin: 0;">
+        <li style="margin-bottom: 8px;">Use strong and unique passwords.</li>
+        <li style="margin-bottom: 8px;">Enable two-factor authentication (2FA).</li>
+        <li style="margin-bottom: 8px;">Don’t share login credentials.</li>
+        <li style="margin-bottom: 8px;">Sign out after accessing on public devices.</li>
+      </ul>
+    </div>
+
+    <!-- Bank Info -->
+    <div style="flex: 2; min-width: 280px; background: #f0f8ff; padding: 20px; border-radius: 12px; border: 1px solid #c5e3fa; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+      <h3 style="color: #025d9c; margin-bottom: 12px;">🏦 Texas Credit Benchmark</h3>
+      
+      <p style="margin: 10px 0; font-size: 14px;"><strong>IFSC Code:</strong> TCBL0000214</p>
+      <p style="margin: 10px 0; font-size: 14px;"><strong>Head Office:</strong> Texas, USA</p>
+      <p style="margin: 10px 0; font-size: 14px;"><strong>Support Email:</strong> support@texascreditbenchmark.com</p>
+      <p style="margin: 10px 0; font-size: 14px;"><strong>Customer Care:</strong> +1 267 986 8319</p>
+    </div>
+
+  </div>
+</div>
+      
+<!-- ✅ Bank Statement Section -->
+<!--<div class="tab-section" id="bankStatement">-->
+<!--  <div class="breadcrumbs">Pages / <strong>Bank Statement</strong></div>-->
+<!--  <table id="statementTable" style="width:100%; border-collapse:collapse; font-family:sans-serif; margin-top:20px;">-->
+<!--    <thead style="background:#f1f1f1;">-->
+<!--      <tr>-->
+<!--        <th>User Email</th>-->
+<!--        <th>Full Name</th>-->
+<!--        <th>Phone</th>-->
+<!--        <th>Country</th>-->
+<!--        <th>Bank Name</th>-->
+<!--        <th>Account No</th>-->
+<!--        <th>Account Type</th>-->
+<!--        <th>Currency</th>-->
+<!--        <th>SWIFT</th>-->
+<!--        <th>IFSC</th>-->
+<!--        <th>Amount</th>-->
+<!--        <th>Method</th>-->
+<!--        <th>Date</th>-->
+<!--      </tr>-->
+<!--    </thead>-->
+<!--    <tbody id="statementBody">-->
+<!--      <tr><td colspan="13" style="text-align:center; padding:15px;">Loading...</td></tr>-->
+<!--    </tbody>-->
+<!--  </table>-->
+<!--</div>-->
+
+<!-- ✅ Bank Statement Section -->
+
+<div class="tab-section" id="bankStatement">
+    
+  <div class="breadcrumbs"><strong>Bank Statement</strong></div>
+<button id="downloadCsvBtn" style="margin-bottom: 10px; padding: 8px 16px; background-color: #0073aa; color: white; border: none; border-radius: 6px; cursor: pointer; margin-left: 10px;">Download Statement</button>
+
+  <table id="statementTable" style="width: 100%; border-collapse: collapse; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-top: 20px; font-size: 14px; box-shadow: 0 0 12px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden;">
+    <thead style="background-color: #0073aa; color: white; text-align: left;">
+      <tr>
+        <th style="padding: 12px 10px;">User Email</th>
+        <th style="padding: 12px 10px;">Full Name</th>
+        <th style="padding: 12px 10px;">Phone</th>
+        <th style="padding: 12px 10px;">Country</th>
+        <th style="padding: 12px 10px;">Bank Name</th>
+        <th style="padding: 12px 10px;">IBAN Number</th>
+        <th style="padding: 12px 10px;">Account Type</th>
+        <th style="padding: 12px 10px;">Currency</th>
+        <th style="padding: 12px 10px;">SWIFT</th>
+        <th style="padding: 12px 10px;">IFSC</th>
+        <th style="padding: 12px 10px;">Amount</th>
+        <th style="padding: 12px 10px;">Method</th>
+        <th style="padding: 12px 10px;">Date</th>
+      </tr>
+    </thead>
+    <tbody id="statementBody" style="background: #fff;">
+      <tr>
+        <td colspan="13" style="text-align:center; padding:15px; color: #888;">Loading...</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+     
+
+<!-- ✅ Recipient Multi-Step Form Section -->
+<div class="tab-section" id="recipient" style="padding: 20px; background: #f9f9f9; border-radius: 10px;">
+  <div class="breadcrumbs" style="margin-bottom: 20px; font-weight: 500; color: #666;">
+    <strong style="color: #333;">Transfer</strong>
+  </div>
+
+  <!-- ✅ Flex Container: Form + Right Panel -->
+  <div style="display: flex; flex-wrap: wrap; gap: 30px;">
+
+    <!-- ✅ LEFT SIDE: Your Original Form (Unchanged) -->
+    <div style="flex: 2; min-width: 300px;">
+      <form id="recipientForm" style="max-width: 100%; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: 'Segoe UI', sans-serif;">
+      
+        <!-- Step 1 -->
+        <div id="step1" class="form-step">
+          <h3 style="margin-bottom: 20px;">Step 1: Personal Information</h3>
+          <input type="text" name="full_name" placeholder="Full Name" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="email" name="email" placeholder="Recipient Email" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="phone" placeholder="Phone with Country Code" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="country" placeholder="Country" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="street" placeholder="Street Address" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="city" placeholder="City" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="state" placeholder="State" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="zip" placeholder="ZIP/Postal Code" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <button type="button" onclick="nextStep(1)" style="padding:10px 20px; background:#007bff; color:white; border:none; border-radius:5px;">Next</button>
+        </div>
+
+        <!-- Step 2 -->
+        <div id="step2" class="form-step" style="display:none">
+          <h3 style="margin-bottom: 20px;">Step 2: Bank Details</h3>
+          <input type="text" name="bank_name" placeholder="Bank Name" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="bank_branch" placeholder="Bank Branch" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="bank_address" placeholder="Bank Address" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="account_number" placeholder="Account Number / IBAN" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="account_type" placeholder="Account Type" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="currency" placeholder="Currency" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <button type="button" onclick="prevStep(2)" style="padding:10px 20px; background:#6c757d; color:white; border:none; border-radius:5px; margin-right:10px;">Back</button>
+          <button type="button" onclick="nextStep(2)" style="padding:10px 20px; background:#007bff; color:white; border:none; border-radius:5px;">Next</button>
+        </div>
+
+        <!-- Step 3 -->
+        <div id="step3" class="form-step" style="display:none">
+          <h3 style="margin-bottom: 20px;">Step 3: SWIFT / IFSC</h3>
+          <input type="text" name="swift" placeholder="SWIFT / BIC Code" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="routing" placeholder="Routing Number" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="sort_code" placeholder="Sort Code" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="ifsc" placeholder="IFSC Code" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <button type="button" onclick="prevStep(3)" style="padding:10px 20px; background:#6c757d; color:white; border:none; border-radius:5px; margin-right:10px;">Back</button>
+          <button type="button" onclick="nextStep(3)" style="padding:10px 20px; background:#007bff; color:white; border:none; border-radius:5px;">Next</button>
+        </div>
+
+        <!-- Step 4 -->
+        <div id="step4" class="form-step" style="display:none">
+          <h3 style="margin-bottom: 20px;">Step 4: Amount & Payment</h3>
+          <input type="number" name="transfer_amount" placeholder="Amount" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <select name="payment_method" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+            <option value="">-- Select Payment Method --</option>
+            <!--<option value="Debit Card">Debit Card</option>-->
+            <!--<option value="Credit Card">Credit Card</option>-->
+            <option value="Bank Transfer">Bank Transfer</option>
+          </select> <br>
+          <button type="button" onclick="prevStep(4)" style="padding:10px 20px; background:#6c757d; color:white; border:none; border-radius:5px; margin-right:10px;">Back</button>
+          <button type="submit" style="padding:10px 20px; background:#28a745; color:white; border:none; border-radius:5px;">Transfer</button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- ✅ RIGHT SIDE PANEL -->
+    <div style="flex: 1; min-width: 250px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); font-family: 'Segoe UI', sans-serif;">
+      <h3>📌 Transfer Guidelines</h3>
+      <ul style="padding-left: 20px; line-height: 1.8; font-size: 14px;">
+        <li>Ensure all recipient details are accurate</li>
+        <li>Use correct account number and bank codes</li>
+        <li>Transfers may take up to 2 business days</li>
+        <li>Check currency rates before submitting</li>
+      </ul>
+
+      <hr style="margin: 20px 0;">
+     
+     <h3>⚠️ Important</h3>
+     <br><br>
+
+<div style="font-size: 13px; color: #cc0000;">
+    <h5 style="color: #FF6347;">* Simple & firm:</h5>
+    <p>Keep your banking information private. Don’t disclose passwords or account details to anyone.</p><br>
+
+    <h5 style="color: #FF6347;">* Bank-style caution:</h5>
+    <p>Your security is our priority. Never share your login credentials or sensitive bank information.</p><br>
+    
+
+    <h5 style="color: #FF6347;">* Warning tone:</h5>
+    <p>Sharing your password or banking information can lead to fraud. Stay cautious and secure.</p>
+</div>
+    </div>
+  </div>
+
+  <!-- ✅ FOOTER ONLY FOR THIS SECTION -->
+  <div style="margin-top: 40px; text-align: center; font-size: 14px; color: #666;">
+    Need assistance? <a href="mailto:support@texascreditbenchmark.com" style="color: #007bff;">Contact support</a> or call +1 (267) 986 8319.
+  </div>
+</div>
+
+
+<!-- Card -->
+<div id="card" class="tab-section">
+  <div class="breadcrumbs"><strong>Card</strong></div>
+  <label><input type="checkbox" id="cardToggle" checked> Active</label>
+
+  <div class="card-flip-container" id="cardFlipContainer">
+    <div class="card-flip-inner">
+      <!-- ▸ Front Side ◂ -->
+      <div class="card-front">
+        <div class="top-left-logo">
+          <img src="https://texascreditbenchmark.com/wp-content/uploads/2025/07/Logo.png" alt="Logo" class="logo" />
+        </div>
+
+        <div class="master-debit">
+          <div class="master">MASTER</div>
+          <div class="debit">DEBIT</div>
+        </div>
+
+        <div class="chip-contactless">
+          <img src="https://texascreditbenchmark.com/wp-content/uploads/2025/07/Chip-1.png" alt="Chip" class="chip" />
+          <img src="https://texascreditbenchmark.com/wp-content/uploads/2025/07/Wifi.png" alt="Contactless" class="contactless" />
+        </div>
+
+        <!-- Card Number -->
+        <div class="card-number"></div>
+
+        <!-- Card Info -->
+        <div class="card-info">
+          <div class="cardholder-name"></div>
+          <div class="validity">
+            <div class="valid-thru">VALID <br />THRU</div>
+            <div class="valid-date"></div>
+          </div>
+        </div>
+
+        <img src="https://texascreditbenchmark.com/wp-content/uploads/2025/07/mastercard-logo.png" alt="MasterCard" class="mastercard-logo" />
+      </div>
+
+      <!-- ▸ Back Side ◂ -->
+      <div class="card-back">
+        <div class="top-strip">
+          <div>Customer Service</div>
+          <div>GEMLQPO GH X1111658M 0088 MIA 8496</div>
+        </div>
+
+        <div class="magnetic-strip"></div>
+
+        <div class="signature-cvc-container">
+          <div class="signature-box"></div>
+          <div class="cvc-box">
+            <div class="cvc-number"></div>
+            <div>CVC</div>
+          </div>
+        </div>
+
+        <div class="text-container">
+          <div class="text-column">
+            If your card is lost or stolen, please contact our Customer Support immediately at 888 000 9999 or visit www.texascreditbenchmark.com. This card remains the property of Texas Credit Benchmark and must be returned upon request. It is non-transferable and its use is subject to the terms and conditions outlined in the cardholder agreement. Please sign the card in the space provided to validate it. Protect your card and personal information at all times.
+          </div>
+          <div class="text-column">
+            This debit card is issued by Texas Credit Benchmark Bank and remains its property at all times. By using this card, you agree to follow the terms and conditions provided by the bank. Please sign in the space provided to activate your card. In case of loss, theft, or unauthorized use, immediately contact our 24/7 Customer Care at 888 000 9999 or visit www.texascreditbenchmark.com. Protect your card like cash and never share your PIN or sensitive information with anyone.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="flip-button" id="flipButton">Flip Card</button>
+  
+  <!-- 🆘 Customer Help Section -->
+<div class="card-help-section" style="margin-top: 40px; background: #f1f7ff; padding: 20px; border-radius: 10px;">
+  <h3 style="margin-bottom: 12px; color: #003366;">Need Help?</h3>
+  <p style="margin: 0 0 8px;">☎ <strong>Call Us:</strong> +1 (267) 986 8319
+  <p style="margin: 0 0 8px;">📧 <strong>Email:</strong> <a href="mailto:support@texascreditbenchmark.com">support@texascreditbenchmark.com</a></p>
+  <p style="margin: 0;">🌐 <strong>Website:</strong> <a href="https://www.texascreditbenchmark.com" target="_blank">www.texascreditbenchmark.com</a></p>
+</div>
+
+<!-- 🔒 Security Tips Section -->
+<div class="card-security-tips" style="margin-top: 30px; background: #fff7e6; padding: 20px; border-radius: 10px;">
+  <h3 style="margin-bottom: 12px; color: #664d00;">Card Security Tips</h3>
+  <ul style="padding-left: 20px; margin: 0; color: #444; font-size: 15px;">
+    <li>✔ Never share your card number, CVC, or OTP with anyone.</li>
+    <li>✔ Always log out after accessing your account on public devices.</li>
+    <li>✔ If your card is lost or stolen, report it immediately.</li>
+    <li>✔ Review your transactions regularly for suspicious activity.</li>
+    <li>✔ Use strong passwords and enable email alerts for transfers.</li>
+  </ul>
+</div>
+</div>
+
+
+      <!-- Support TAB Section Only -->
+<div id="support" class="tab-section" style="display: none;">
+  <div class="support-wrapper">
+
+    <!-- LEFT SIDE -->
+    <div class="support-left">
+      <div class="breadcrumbs">Pages / <strong>Support</strong></div>
+      <p>If you need help, contact <a href="mailto:support@texascreditbenchmark.com">support@texascreditbenchmark.com</a></p>
+
+      <div style="margin-top: 30px; background: #e8d5d7; padding: 20px 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e0e0e0;">
+  <h3 style="border-left: 4px solid #007bff; padding-left: 10px; color: #333;">🔍 Support Topics</h3>
+  <ul style="margin-top: 15px; padding-left: 20px; line-height: 1.8; color: #444;">
+    <li>💳 Card Issues (Lost/Stolen, Block/Unblock)</li>
+    <li>🏦 Account Access (Login problems, Password reset)</li>
+    <li>📈 Transaction Disputes</li>
+    <li>📄 Document Requests (Statements, Tax forms)</li>
+    <li>🔐 Security & Fraud</li>
+  </ul>
+</div>
+
+<!-- Styled Request Form -->
+<div style="margin-top: 30px; background: #fff; padding: 20px 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e0e0e0;">
+  <h3 style="border-left: 4px solid #28a745; padding-left: 10px; color: #333;">✉️ Submit a Request</h3>
+  <form onsubmit="event.preventDefault(); showPopup();" style="margin-top: 15px; font-family: 'Segoe UI', sans-serif;">
+    <label for="name" style="display: block; margin-bottom: 5px;">Full Name:</label>
+    <input type="text" id="name" required style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px;">
+
+    <label for="email" style="display: block; margin-bottom: 5px;">Email:</label>
+    <input type="email" id="email" required style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px;">
+
+    <label for="query" style="display: block; margin-bottom: 5px;">Your Query:</label>
+    <textarea id="query" rows="4" required style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px;"></textarea>
+
+    <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;">Submit</button>
+  </form>
+</div>
+
+<!-- Popup Modal -->
+<div id="popupModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9999; align-items: center; justify-content: center;">
+  <div style="background: white; padding: 30px 20px; max-width: 400px; width: 90%; text-align: center; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); position: relative;">
+    <span onclick="hidePopup()" style="position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 18px; font-weight: bold;">×</span>
+    <h3 style="color: #28a745;">✅ Request Submitted</h3>
+    <p>Thank you for contacting us. We will get back to you shortly.</p>
+    <button onclick="hidePopup()" style="margin-top: 15px; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 6px;">OK</button>
+  </div>
+</div>
+
+<!-- Support TAB Section Only Script for Popup Model after submission -->
+<script>
+  function showPopup() {
+    document.getElementById("popupModal").style.display = "flex";
+  }
+
+  function hidePopup() {
+    document.getElementById("popupModal").style.display = "none";
+  }
+</script>
+
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="support-right">
+      <h3>📞 Contact Details</h3>
+      <p><strong>Phone:</strong><br>+1 (267) 986 8319</p>
+      <p><strong>Email:</strong><br><a href="mailto:support@texascreditbenchmark.com">support@texascreditbenchmark.com</a></p>
+
+      <hr style="margin: 20px 0;">
+
+      <h3>🕒 Service Hours</h3>
+<p>Monday to Friday<br><strong>9:00 AM – 6:00 PM (CST, USA)</strong></p>
+<p>Closed on weekends & U.S. public holidays</p>
+<!-- ✅ Recipient Multi-Step Form Section -->
+<div class="tab-section" id="recipient" style="padding: 20px; background: #f9f9f9; border-radius: 10px;">
+  <div class="breadcrumbs" style="margin-bottom: 20px; font-weight: 500; color: #666;">
+    Pages / <strong style="color: #333;">Transfer</strong>
+  </div>
+
+  <!-- ✅ Flex Container: Form + Right Panel -->
+  <div style="display: flex; flex-wrap: wrap; gap: 30px;">
+
+    <!-- ✅ LEFT SIDE: Your Original Form (Unchanged) -->
+    <div style="flex: 2; min-width: 300px;">
+      <form id="recipientForm" style="max-width: 100%; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: 'Segoe UI', sans-serif;">
+      
+        <!-- Step 1 -->
+        <div id="step1" class="form-step">
+          <h3 style="margin-bottom: 20px;">Step 1: Personal Information</h3>
+          <input type="text" name="full_name" placeholder="Full Name" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="email" name="email" placeholder="Recipient Email" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="phone" placeholder="Phone with Country Code" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="country" placeholder="Country" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="street" placeholder="Street Address" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="city" placeholder="City" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="state" placeholder="State" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="zip" placeholder="ZIP/Postal Code" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <button type="button" onclick="nextStep(1)" style="padding:10px 20px; background:#007bff; color:white; border:none; border-radius:5px;">Next</button>
+        </div>
+
+        <!-- Step 2 -->
+        <div id="step2" class="form-step" style="display:none">
+          <h3 style="margin-bottom: 20px;">Step 2: Bank Details</h3>
+          <input type="text" name="bank_name" placeholder="Bank Name" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="bank_branch" placeholder="Bank Branch" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="bank_address" placeholder="Bank Address" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="account_number" placeholder="Account Number / IBAN" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="account_type" placeholder="Account Type" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="currency" placeholder="Currency" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <button type="button" onclick="prevStep(2)" style="padding:10px 20px; background:#6c757d; color:white; border:none; border-radius:5px; margin-right:10px;">Back</button>
+          <button type="button" onclick="nextStep(2)" style="padding:10px 20px; background:#007bff; color:white; border:none; border-radius:5px;">Next</button>
+        </div>
+
+        <!-- Step 3 -->
+        <div id="step3" class="form-step" style="display:none">
+          <h3 style="margin-bottom: 20px;">Step 3: SWIFT / IFSC</h3>
+          <input type="text" name="swift" placeholder="SWIFT / BIC Code" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="routing" placeholder="Routing Number" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="sort_code" placeholder="Sort Code" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <input type="text" name="ifsc" placeholder="IFSC Code" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <button type="button" onclick="prevStep(3)" style="padding:10px 20px; background:#6c757d; color:white; border:none; border-radius:5px; margin-right:10px;">Back</button>
+          <button type="button" onclick="nextStep(3)" style="padding:10px 20px; background:#007bff; color:white; border:none; border-radius:5px;">Next</button>
+        </div>
+
+        <!-- Step 4 -->
+        <div id="step4" class="form-step" style="display:none">
+          <h3 style="margin-bottom: 20px;">Step 4: Amount & Payment</h3>
+          <input type="number" name="transfer_amount" placeholder="Amount" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+          <select name="payment_method" required style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:6px;">
+            <option value="">-- Select Payment Method --</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+          </select>
+          <button type="button" onclick="prevStep(4)" style="padding:10px 20px; background:#6c757d; color:white; border:none; border-radius:5px; margin-right:10px;">Back</button>
+          <button type="submit" style="padding:10px 20px; background:#28a745; color:white; border:none; border-radius:5px;">Transfer</button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- ✅ RIGHT SIDE PANEL -->
+    <div style="flex: 1; min-width: 250px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); font-family: 'Segoe UI', sans-serif;">
+      <h3>📌 Transfer Guidelines</h3>
+      <ul style="padding-left: 20px; line-height: 1.8; font-size: 14px;">
+        <li>Ensure all recipient details are accurate</li>
+        <li>Use correct account number and bank codes</li>
+        <li>Transfers may take up to 3 business days</li>
+        <li>Check currency rates before submitting</li>
+      </ul>
+
+      <hr style="margin: 20px 0;">
+
+      <h3>⚠️ Important</h3>
+      <p style="font-size: 13px; color: #cc0000;">
+        Do not share OTPs, passwords, or personal bank details with anyone.
+      </p>
+    </div>
+  </div>
+
+  
+</div>
+
+
+      <hr style="margin: 20px 0;">
+
+      <h3>🚨 Escalate Your Issue</h3>
+      <p>If you're facing urgent issues like account lockout or fraud, please escalate immediately.</p>
+      <a href="mailto:urgent@texascreditbenchmark.com" style="color: #dc3545; font-weight: bold;">support@texascreditbenchmark.com</a>
+    </div>
+
+  </div>
+<!-- ✅ FOOTER ONLY FOR THIS SECTION -->
+<footer style="text-align: center; font-size: 14px; background: transparent; padding: 15px 0;">
+  <div style="color: #333; background: transparent; font-size: 14px;">
+    Need assistance? 
+    <a href="mailto:support@texascreditbenchmark.com" style="color: #007bff; text-decoration: none;">Contact support</a> 
+    or call +1 (267) 986 8319.
+  </div>
+</footer>
+</div>
+</div>
+<script>
+/* =========================================================
+   📌 POPUP MODAL HELPERS
+   ========================================================= */
+function showPopup() {
+  document.getElementById("popupModal").style.display = "flex";
+}
+function hidePopup() {
+  document.getElementById("popupModal").style.display = "none";
+}
+
+/* =========================================================
+   🎨 ACTIVATE LUCIDE ICONS
+   ========================================================= */
+lucide.createIcons();
+
+/* =========================================================
+   📂 SIDEBAR NAVIGATION & TAB SWITCHING
+   ========================================================= */
+const navItems   = document.querySelectorAll('.nav-item');
+const tabSections = document.querySelectorAll('.tab-section');
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    navItems.forEach(i => i.classList.remove('active'));
+    tabSections.forEach(s => s.classList.remove('active'));
+
+    item.classList.add('active');
+    const tabId = item.getAttribute('data-tab');
+    showTab(tabId);
+    document.getElementById('currentPageTitle').textContent =
+      tabId.charAt(0).toUpperCase() + tabId.slice(1);
+  });
+});
+
+function showTab(tabId) {
+  tabSections.forEach(tab => tab.style.display = 'none');
+  const target = document.getElementById(tabId);
+  if (target) {
+    target.style.display = 'block';
+    target.classList.add('active');
+  }
+  if (tabId === 'bankStatement') loadBankStatement();
+  if (tabId === 'profile')       loadUserProfile();
+  if (tabId === 'transaction')   loadTransactions();
+}
+
+/* =========================================================
+   🔒 HTML ESCAPE HELPER
+   ========================================================= */
+function escapeHtml(text) {
+  return typeof text !== "string" ? "" : text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/* =========================================================
+   👤 LOAD USER PROFILE
+   ========================================================= */
+function loadUserProfile() {
+  fetch('/wp-admin/admin-ajax.php?action=get_user_profile')
+    .then(res => res.json())
+    .then(response => {
+      if (!response.success)
+        return alert('❌ ' + (response.data?.message || 'Could not load profile.'));
+      const d = response.data;
+      document.getElementById('profileFullName').textContent = d.full_name  || '-';
+      document.getElementById('profileEmail')   .textContent = d.email      || '-';
+      document.getElementById('profilePhone')   .textContent = d.phone      || '-';
+      document.getElementById('ibannumber')   .textContent = d.iban_number      || '-';
+      document.getElementById('profileCountry') .textContent = d.country    || '-';
+      document.getElementById('profileState')   .textContent = d.state      || '-';
+      document.getElementById('profileCity')    .textContent = d.city       || '-';
+      document.getElementById('profileZip')     .textContent = d.zip        || '-';
+    });
+}
+
+/* =========================================================
+   🧾 LOAD BANK‑STATEMENT TABLE
+   ========================================================= */
+function loadBankStatement() {
+  const tbody = document.getElementById("statementBody");
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="13">Loading...</td></tr>`;
+
+  fetch('/wp-admin/admin-ajax.php?action=get_all_recipient_data')
+    .then(res => res.json())
+    .then(data => {
+      tbody.innerHTML = '';
+      if (!data.success || !Array.isArray(data.data) || !data.data.length) {
+        tbody.innerHTML = `<tr><td colspan="13">No data found.</td></tr>`;
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      data.data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(row.user_email)}</td>
+          <td>${escapeHtml(row.full_name)}</td>
+          <td>${escapeHtml(row.phone         || '-')}</td>
+          <td>${escapeHtml(row.country       || '-')}</td>
+          <td>${escapeHtml(row.bank_name)}</td>
+          <td>${escapeHtml(row.account_number)}</td>
+          <td>${escapeHtml(row.account_type)}</td>
+          <td>${escapeHtml(row.currency)}</td>
+          <td>${escapeHtml(row.swift         || '-')}</td>
+          <td>${escapeHtml(row.ifsc          || '-')}</td>
+          <td>$${parseFloat(row.transfer_amount || 0).toFixed(2)}</td>
+          <td>${escapeHtml(row.payment_method)}</td>
+          <td>${escapeHtml(row.created_at)}</td>`;
+        frag.appendChild(tr);
+      });
+      tbody.appendChild(frag);
+    })
+    .catch(err => {
+      console.error('Fetch error:', err);
+      tbody.innerHTML = `<tr><td colspan="13">Error loading data.</td></tr>`;
+    });
+}
+
+/* =========================================================
+   💳 LOAD TRANSACTIONS TABLE
+   ========================================================= */
+function loadTransactions() {
+  const tbody = document.getElementById("transactionBody");
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
+
+  fetch('/wp-admin/admin-ajax.php?action=get_transfer_history')
+    .then(res => res.json())
+    .then(data => {
+      tbody.innerHTML = '';
+      if (!data.success || !data.data.length) {
+        tbody.innerHTML = `<tr><td colspan="5">No history found.</td></tr>`;
+        return;
+      }
+      data.data.forEach(row => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${escapeHtml(row.full_name)}</td>
+            <td>${escapeHtml(row.account_number)}</td>
+            <td>$${parseFloat(row.transfer_amount).toFixed(2)}</td>
+            <td>${escapeHtml(row.payment_method)}</td>
+            <td>${escapeHtml(row.created_at)}</td>
+          </tr>`;
+      });
+    })
+    .catch(err => {
+      console.error('Transaction fetch error:', err);
+      tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Error loading history</td></tr>`;
+    });
+}
+
+/* =========================================================
+   💰 FETCH USER LIVE BALANCE
+   ========================================================= */
+function fetchUserLiveBalance() {
+  const data = new FormData();
+  data.append('action', 'get_user_balance');
+  fetch('/wp-admin/admin-ajax.php', {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: data
+  })
+    .then(res => res.json())
+    .then(response => {
+      const el = document.getElementById('live-balance');
+      if (!el) return;
+      if (response.success) {
+        const balance = parseFloat(response.data.balance || 0)
+          .toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+        el.innerHTML = `${balance} <span class="change" id="balanceChange"></span>`;
+      } else {
+        el.innerHTML = '$0.00 <span class="change">–</span>';
+      }
+    })
+    .catch(err => {
+      console.error('Balance fetch error:', err);
+      const el = document.getElementById('live-balance');
+      if (el) el.innerHTML = '$0.00 <span class="change">–</span>';
+    });
+}
+document.addEventListener('DOMContentLoaded', fetchUserLiveBalance);
+
+/* =========================================================
+   🔄 MULTI‑STEP RECIPIENT FORM NAV
+   ========================================================= */
+function nextStep(current) {
+  document.getElementById(`step${current}`)    .style.display = 'none';
+  document.getElementById(`step${current + 1}`).style.display = 'block';
+}
+function prevStep(current) {
+  document.getElementById(`step${current}`)    .style.display = 'none';
+  document.getElementById(`step${current - 1}`).style.display = 'block';
+}
+
+/* =========================================================
+   🚀 DOMContentLoaded: INITIAL LOAD & FORM SUBMISSIONS
+   ========================================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  /* Initial bank‑statement load */
+  loadBankStatement();
+
+  /* ----- Recipient Form ----- */
+  const recipientForm = document.getElementById('recipientForm');
+  if (recipientForm) {
+    recipientForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      fetch('/wp-admin/admin-ajax.php?action=add_recipient', {
+        method: 'POST',
+        body: new FormData(recipientForm)
+      })
+      .then(res => res.json())
+      .then(response => {
+        if (response.success) {
+          alert('✅ Transfer successful!');
+          fetchUserLiveBalance();
+          recipientForm.reset();
+          for (let i = 1; i <= 4; i++) {
+            const step = document.getElementById(`step${i}`);
+            step.style.display = (i === 1 ? 'block' : 'none');
+          }
+        } else {
+          alert('❌ Error: ' + (response.data?.message || 'Unknown error'));
+        }
+      })
+      .catch(() => alert('❌ Submission failed.'));
+    });
+  }
+
+  /* ----- Transfer Form ----- */
+  const transferForm = document.getElementById('transferForm');
+  if (transferForm) {
+    transferForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      fetch('/wp-admin/admin-ajax.php?action=send_transfer', {
+        method: 'POST',
+        body: new FormData(transferForm)
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          alert('✅ Transfer successful!');
+          transferForm.reset();
+          fetchUserLiveBalance();
+        } else {
+          alert('❌ Transfer failed: ' + (res.data?.message || 'Unknown error'));
+        }
+      })
+      .catch(() => alert('❌ Transfer failed.'));
+    });
+  }
+});
+
+/* =========================================================
+   💳 CARD: FLIP, TOGGLE STATUS & BLUR FIELDS
+   ========================================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  const cardToggle        = document.getElementById('cardToggle');
+  const flipButton        = document.getElementById('flipButton');
+  const cardFlipContainer = document.getElementById('cardFlipContainer');
+
+  fetch('/wp-admin/admin-ajax.php?action=get_card_data')
+    .then(res => res.json())
+    .then(data => {
+    //   if (!data.success) return alert('✅Your Card is Available Now.');
+      const card = data.data;
+      document.querySelector('.card-number')     .innerHTML = formatCardNumber(card.CardNumber);
+      document.querySelector('.cardholder-name') .textContent = card.CardHolderName;
+      document.querySelector('.valid-date')      .textContent = card.Date;
+      document.querySelector('.cvc-number')      .textContent = card.CVV;
+      cardToggle.checked = card.Status === 'active';
+      updateSensitiveVisibility();                 // blur/unblur on load
+    });
+
+  if (flipButton && cardFlipContainer) {
+    flipButton.addEventListener('click', () => {
+      cardFlipContainer.classList.toggle('flipped');
+    });
+  }
+
+  if (cardToggle) {
+    cardToggle.addEventListener('change', () => {
+      const newStatus = cardToggle.checked ? 'active' : 'inactive';
+      fetch('/wp-admin/admin-ajax.php?action=toggle_card_status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `status=${encodeURIComponent(newStatus)}`
+      }).then(updateSensitiveVisibility);
+    });
+  }
+
+  /* Helper: blur/unblur fields based on checkbox */
+  const sensitiveFields = [
+    document.querySelector('.card-number'),
+    document.querySelector('.cardholder-name'),
+    document.querySelector('.valid-date'),
+    document.querySelector('.cvc-number')
+  ];
+  function updateSensitiveVisibility() {
+    const isActive = cardToggle.checked;
+    sensitiveFields.forEach(field => {
+      if (field) field.classList.toggle('blur', !isActive);
+    });
+  }
+  /* Helper: format card number */
+  function formatCardNumber(num) {
+  return num.replace(/(\d{4})(?=\d)/g, '$1 ')  // Adds space after every 4 digits
+            .split(' ')                       
+            .map(d => `<span class="sensitive">${d}</span>`)  
+            .join(' ');  
+}
+});
+
+/* =========================================================
+   🔓 LOGOUT HANDLER
+   ========================================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to log out?')) {
+        fetch('/wp-admin/admin-ajax.php?action=user_logout', {
+          method: 'POST',
+          credentials: 'same-origin'
+        }).finally(() => {
+          window.location.href = '/login';
+        });
+      }
+    });
+  }
+});
+
+/* =========================================================
+   🛎️ NOTIFICATION DROPDOWN TOGGLE
+   ========================================================= */
+function toggleNotificationDropdown() {
+  const dd = document.getElementById('notificationDropdown');
+  dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+}
+window.addEventListener('click', e => {
+  const icon  = e.target.closest('[onclick=\"toggleNotificationDropdown()\"]');
+  const drop  = document.getElementById('notificationDropdown');
+  if (!icon && drop && drop.style.display === 'block') drop.style.display = 'none';
+});
+
+/* =========================================================
+   🙍‍♂️ USER DROPDOWN TOGGLE
+   ========================================================= */
+function toggleUserDropdown() {
+  const dd = document.getElementById('userDropdown');
+  dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+}
+window.onclick = e => {
+  if (!e.target.closest('#userDropdown') &&
+      !e.target.closest('[onclick=\"toggleUserDropdown()\"]')) {
+    document.getElementById('userDropdown').style.display = 'none';
+  }
+};
+
+/* =========================================================
+   👁️ CARD SENSITIVE FIELD BLUR VIA CHECKBOX (GLOBAL)
+   ========================================================= */
+const cardToggle = document.getElementById('cardToggle');
+if (cardToggle) {
+  const sensitiveFields = [
+    document.querySelector('.card-number'),
+    document.querySelector('.cardholder-name'),
+    document.querySelector('.valid-date'),
+    document.querySelector('.cvc-number')
+  ];
+  const updateSensitiveVisibility = () => {
+    const isActive = cardToggle.checked;
+    sensitiveFields.forEach(f => {
+      if (f) f.classList.toggle('blur', !isActive);
+    });
+  };
+  updateSensitiveVisibility();          // run once on load
+  cardToggle.addEventListener('change', () => {
+    const newStatus = cardToggle.checked ? 'active' : 'inactive';
+    fetch('/wp-admin/admin-ajax.php?action=toggle_card_status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `status=${encodeURIComponent(newStatus)}`
+    });
+    updateSensitiveVisibility();
+  });
+}
+
+
+/* =========================================================
+   Download button  for statement
+   ========================================================= */
+ document.getElementById('downloadCsvBtn').addEventListener('click', function () {
+    const table = document.getElementById('statementTable');
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = [], cols = rows[i].querySelectorAll('th, td');
+      for (let j = 0; j < cols.length; j++) {
+        let cellText = cols[j].innerText.trim();
+
+        // Special handling for Amount and Date
+        if (j === 10) { // Amount column
+          // Ensure number is plain text so Excel doesn't round or truncate it
+          cellText = `"${cellText.replace(/,/g, '')}"`;
+        } else if (j === 12) { // Date column
+          // Prefix with apostrophe to keep Excel from auto-formatting it
+          cellText = `'${cellText}'`;
+        } else {
+          // Escape quotes and wrap
+          cellText = `"${cellText.replace(/"/g, '""')}"`;
+        }
+
+        row.push(cellText);
+      }
+      csv.push(row.join(','));
+    }
+
+    const csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
+
+    const downloadLink = document.createElement('a');
+    downloadLink.href = URL.createObjectURL(csvFile);
+    downloadLink.download = 'bank-statement.csv';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  });
+
+/* =========================================================
+   Dashboard chart
+   ========================================================= */
+
+   
+   
+   
+</script>
+
+</body>
+</html>
