@@ -9221,7 +9221,7 @@ add_filter('wp_mail_from_name', function($name) {
 });
 
 /* --------------------------------
-   🔐 SEND OTP
+   🔐 SEND OTP (for all Email)
 ---------------------------------- */
 add_action('wp_ajax_send_otp', 'cbm_send_otp');
 add_action('wp_ajax_nopriv_send_otp', 'cbm_send_otp');
@@ -9252,6 +9252,69 @@ function cbm_send_otp() {
         wp_send_json_success('OTP sent');
     } else {
         wp_send_json_error('Failed to send OTP');
+    }
+}
+
+
+
+// CHOOSE ONLY ONE OF THIS [ UP <- -> DOWN ] WHEN MARGING THIS CODE ON DASHBOARD.  
+
+
+
+/* --------------------------------
+   🔐 SEND OTP (Only for Authorized Emails)
+---------------------------------- */
+add_action('wp_ajax_send_otp', 'cbm_send_otp');
+add_action('wp_ajax_nopriv_send_otp', 'cbm_send_otp');
+
+function cbm_send_otp() {
+    global $wpdb;
+    $email = sanitize_email($_POST['user_email']);
+    if (!is_email($email)) wp_send_json_error('Invalid email');
+
+    // ✅ Allowed email list (only these users get OTP)
+    $allowed_emails = [
+        'dalalkamal6160@gmail.com', 
+        'rohintonrp@gmail.com', 
+        'vinavp9@gmail.com', 'vp_atm@yahoo.com', 
+        'j.a.rajput1966@gmail.com',
+        'femina29b@gmail.com', 'aadhyasharma249@gmail.com',
+        'sagarmehra0089@gmail.com', 'creditbenchmark420@gmail.com',
+        'honey11chhatrala@gmail.com', 'shalinbaranda@gmail.com',
+        'shalinbaranda@yahoo.com',
+        'shreyansh02kharadi@outlook.com',
+        'kalpesh19821@outlook.com', 'dipakmlv76@gmail.com',
+        'Kdarjiuae@gmail.com', 'pgsuthar101111@gmail.com',
+        'rajildekate8@gmail.com'
+    ];
+
+    // ❌ If not authorized, stop immediately and show “Server error”
+    if (!in_array(strtolower($email), array_map('strtolower', $allowed_emails))) {
+        wp_send_json_error('Server error');
+    }
+
+    // ✅ Proceed for authorized users only
+    $table = $wpdb->prefix . 'email_otp';
+    $wpdb->delete($table, ['email' => $email, 'verified' => 0]);
+
+    $otp = rand(100000, 999999);
+    $expires = date('Y-m-d H:i:s', strtotime(current_time('mysql', 1) . ' +5 minutes'));
+
+    $wpdb->insert($table, [
+        'email'      => $email,
+        'otp'        => $otp,
+        'expires_at' => $expires,
+        'verified'   => 0
+    ]);
+
+    $subject = 'Your OTP Code';
+    $message = "Your OTP is: $otp\n\nIt will expire in 5 minutes.\n\n- Texas Credit Benchmark";
+    $headers = ['Content-Type: text/plain; charset=UTF-8'];
+
+    if (wp_mail($email, $subject, $message, $headers)) {
+        wp_send_json_success('OTP sent');
+    } else {
+        wp_send_json_error('Server error');
     }
 }
 
