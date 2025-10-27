@@ -1,0 +1,274 @@
+<!-- ▸ CreditBenchmark OTP Login ◂ -->
+<style>
+  body {
+    margin: 5px;
+    padding: 150px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: url('https://texascreditbenchmark.com/wp-content/uploads/2025/07/desktop-wallpaper-abstract-login-page-thumbnail.jpg') no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
+    min-height: 100vh;
+  }
+
+  /* Overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 0;
+  }
+
+  .cbm-otp-box {
+    width: 100%;
+    max-width: 430px;
+    background: rgba(255, 255, 255, 0.97);
+    padding: 40px 30px 35px;
+    border-radius: 18px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    animation: fadeIn 0.6s ease;
+    border-top: 5px solid #0073aa;
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1;
+    margin: 80px auto;
+  }
+
+  .cbm-otp-box .logo {
+    margin: 0 auto 18px;
+  }
+
+  .cbm-otp-box .logo img {
+    width: 110px;
+    height: auto;
+    display: block;
+  }
+
+  .cbm-otp-box h3 {
+    margin-bottom: 20px;
+    font-size: 22px;
+    color: #003366;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .cbm-otp-box input {
+    width: 100%;
+    padding: 12px 14px;
+    margin: 14px 0;
+    font-size: 15px;
+    border: 1px solid #ccd7e3;
+    border-radius: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #f9fcff;
+  }
+
+  .cbm-otp-box input:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.2);
+    background: #fff;
+  }
+
+  .cbm-otp-box button {
+    width: 100%;
+    background: #0073aa;
+    color: #fff;
+    border: none;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s ease, transform 0.1s;
+  }
+
+  .cbm-otp-box button:hover {
+    background: #005b8e;
+    transform: scale(1.02);
+  }
+
+  .cbm-msg {
+    margin-top: 12px;
+    font-size: 14px;
+    min-height: 22px;
+    color: #0073aa;
+  }
+
+  .cbm-subtext {
+    font-size: 13px;
+    color: #666;
+    margin-top: 8px;
+  }
+
+  .cbm-forgot {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+
+  .cbm-forgot a {
+    color: #0073aa;
+    text-decoration: none;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  #cbm-step-otp, #cbm-step-email {
+    transition: all 0.4s ease;
+  }
+</style>
+
+<div class="cbm-otp-box">
+  <!-- ✅ Logo -->
+  <div class="logo">
+    <img src="https://texascreditbenchmark.com/wp-content/uploads/2025/07/logo-6-e1751434403324-1.png" alt="Texas Credit Benchmark Logo" />
+  </div>
+
+  <h3>Login</h3>
+
+  <!-- Step 1: Email -->
+  <div id="cbm-step-email">
+    <input type="email" id="cbm_user_email" placeholder="Enter your registered email" required />
+    <button type="button" id="cbm_send_btn">Send OTP</button>
+    <div class="cbm-forgot">Forgot your email? <a href="https://texascreditbenchmark.com/get-in-touch/">Contact Support</a></div>
+  </div>
+
+  <!-- Step 2: OTP -->
+  <div id="cbm-step-otp" style="display:none;">
+    <input type="text" id="cbm_otp_code" placeholder="Enter OTP received in email" required />
+    <button type="button" id="cbm_verify_btn">Verify OTP</button>
+    <div class="cbm-subtext">
+      Didn’t receive OTP? <span id="cbm_timer">Wait 60s…</span>
+    </div>
+  </div>
+
+  <p class="cbm-msg" id="cbm_msg"></p>
+</div>
+
+<script>
+(function () {
+  const ajaxURL = '/wp-admin/admin-ajax.php';
+
+  const emailInp   = document.getElementById('cbm_user_email');
+  const otpInp     = document.getElementById('cbm_otp_code');
+  const msgBox     = document.getElementById('cbm_msg');
+  const stepEmail  = document.getElementById('cbm-step-email');
+  const stepOtp    = document.getElementById('cbm-step-otp');
+  const sendBtn    = document.getElementById('cbm_send_btn');
+  const verifyBtn  = document.getElementById('cbm_verify_btn');
+  const timerSpan  = document.getElementById('cbm_timer');
+
+  let timer;
+
+  function msg(text, color = '#0073aa') {
+    msgBox.style.color = color;
+    msgBox.textContent = text;
+  }
+
+  function lock(btn, state, label) {
+    btn.disabled = state;
+    btn.textContent = state ? 'Please wait…' : label;
+  }
+
+  function urlenc(obj) {
+    return new URLSearchParams(obj).toString();
+  }
+
+  function startCountdown(seconds) {
+    let remaining = seconds;
+    timerSpan.textContent = `Wait ${remaining}s…`;
+    sendBtn.disabled = true;
+
+    timer = setInterval(() => {
+      remaining--;
+      timerSpan.textContent = `Wait ${remaining}s…`;
+      if (remaining <= 0) {
+        clearInterval(timer);
+        timerSpan.textContent = 'You can resend the OTP.';
+        sendBtn.disabled = false;
+      }
+    }, 1000);
+  }
+
+  // ✅ Send OTP
+  sendBtn.addEventListener('click', () => {
+    const email = emailInp.value.trim().toLowerCase();
+    if (!email) return msg('Please enter a valid email', 'red');
+
+    lock(sendBtn, true, 'Please wait…');
+    fetch(ajaxURL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: urlenc({ action: 'send_otp', user_email: email })
+    })
+    .then(r => r.json())
+    .then(res => {
+      lock(sendBtn, false, 'Send OTP');
+      if (res.success) {
+        msg('OTP sent! Check your inbox.');
+        stepEmail.style.display = 'none';
+        stepOtp.style.display = 'block';
+        startCountdown(60); // ⏱ Start timer
+      } else {
+        msg(res.data || 'Server error', 'red');
+      }
+    })
+    .catch(() => {
+      lock(sendBtn, false, 'Send OTP');
+      msg('Network error – is admin-ajax.php reachable?', 'red');
+    });
+  });
+
+  // ✅ Verify OTP
+  verifyBtn.addEventListener('click', () => {
+    const email = emailInp.value.trim().toLowerCase();
+    const otp   = otpInp.value.trim();
+    if (!otp) return msg('Enter the OTP', 'red');
+
+    lock(verifyBtn, true, 'Please wait…');
+    fetch(ajaxURL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: urlenc({ action: 'verify_otp', user_email: email, otp_code: otp })
+    })
+    .then(r => r.json())
+    .then(res => {
+      lock(verifyBtn, false, 'Verify OTP');
+      if (res.success) {
+        const allowedEmails = [
+              'dalalkamal6160@gmail.com',
+              'rohintonrp@gmail.com',
+
+          'vinavp9@gmail.com', 'vp_atm@yahoo.com',
+          'j.a.rajput1966@gmail.com',
+          'femina29b@gmail.com', 'aadhyasharma249@gmail.com',
+          'sagarmehra0089@gmail.com', 'creditbenchmark420@gmail.com',
+          'honey11chhatrala@gmail.com', 'shalinbaranda@gmail.com',
+          'shalinbaranda@yahoo.com',
+          'shreyansh02kharadi@outlook.com',
+          'kalpesh19821@outlook.com','dipakmlv76@gmail.com',
+          'Kdarjiuae@gmail.com','pgsuthar101111@gmail.com',
+          'rajildekate8@gmail.com'
+        ];
+
+        if (!allowedEmails.includes(email)) {
+          return msg('Access denied: Email not authorized', 'red');
+        }
+
+        msg('Verified! Redirecting…');
+        setTimeout(() => { window.location.href = '/dashboard'; }, 1000);
+      } else {
+        msg('OTP invalid or expired', 'red');
+      }
+    })
+    .catch(() => {
+      lock(verifyBtn, false, 'Verify OTP');
+      msg('Network error – check console', 'red');
+    });
+  });
+})();
+</script>
