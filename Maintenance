@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance | Texas Credit Benchmark</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      color: #333;
+    }
+    .container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+    }
+    img {
+      width: 180px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #b10000;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 1.1em;
+      margin-bottom: 20px;
+    }
+    #countdown {
+      font-size: 1.5em;
+      color: #b10000;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    footer {
+      font-size: 0.9em;
+      color: #777;
+      margin-top: 20px;
+    }
+    strong.ct {
+      color: #b10000;
+      background-color: #ffe6e6;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://texascreditbenchmark.com/wp-content/uploads/2025/07/logo-6-e1751434403324.png" alt="Texas Credit Benchmark Logo">
+    <h1>We'll Be Back Soon!</h1>
+    <p>Our system is undergoing important updates for the next <strong>48 hours</strong> <strong class="ct">Central Time (CT).</strong> We appreciate your patience and will be back online shortly.</p>
+    <div id="countdown">Loading countdown...</div>
+    <p>Thank you for your patience.<br>— Texas Credit Benchmark Team</p>
+    <footer>&copy; 2024 Texas Credit Benchmark. All rights reserved.</footer>
+  </div>
+
+  <script>
+    // FIXED maintenance end date in Central Time (CT)
+    // Example: maintenance started Oct 25, 2025 11:00 AM CT, ends 48 hours later
+    const targetDate = new Date('2025-10-27T11:00:00-05:00'); // CT is UTC-5
+
+    function updateCountdown() {
+      const nowCT = new Date();
+      const distance = targetDate - nowCT;
+
+      if (distance < 0) {
+        document.getElementById('countdown').innerHTML = "We're back online!";
+        return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      document.getElementById('countdown').innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s remaining`;
+    }
+
+    // Update every second
+    setInterval(updateCountdown, 1000);
+    updateCountdown(); // Initial call
+  </script>
+</body>
+</html>
